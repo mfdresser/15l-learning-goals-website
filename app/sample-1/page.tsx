@@ -96,40 +96,19 @@ const App = () => {
   const dbRef = useRef<any>(null);
   const authRef = useRef<any>(null);
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-  // Parse Firebase Config - use environment variables if available
-  const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config)
-    : {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      };
+  
+  // Parse Firebase Config
+  const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
   // 1. Initialize Firebase and Authenticate User
   useEffect(() => {
     let unsubscribe = () => {};
-
-    // Check if Firebase config is valid before initializing
-    const hasValidConfig = firebaseConfig &&
-                          firebaseConfig.apiKey &&
-                          firebaseConfig.projectId;
-
-    if (!hasValidConfig) {
-      console.warn("Firebase not configured. Comments feature will be disabled.");
-      setIsAuthReady(true);
-      setUserId('local-user-' + Date.now());
-      return () => {};
-    }
-
+    
     try {
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
+        
         dbRef.current = db;
         authRef.current = auth;
 
@@ -158,7 +137,7 @@ const App = () => {
         console.error("Firebase Initialization or Auth Failed:", error);
         setIsAuthReady(true);
     }
-
+    
     return () => unsubscribe();
   }, []); // Run only once on mount
 
@@ -434,7 +413,7 @@ const App = () => {
             {/* Comment Input */}
             <div className="mb-8 flex space-x-3">
                 <textarea
-                    className="flex-grow p-3 border-2 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 resize-none shadow-inner text-gray-800"
+                    className="flex-grow p-3 border-2 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 resize-none shadow-inner"
                     rows={3}
                     placeholder={isAuthReady ? "Leave your feedback here..." : "Loading authentication..."}
                     value={newComment}
@@ -458,13 +437,7 @@ const App = () => {
 
             {/* Comments List */}
             <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                {!dbRef.current && isAuthReady ? (
-                    <div className="text-center py-6 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                        <p className="text-yellow-800 font-semibold mb-2">⚠️ Comments Feature Not Available</p>
-                        <p className="text-sm text-yellow-700">Firebase configuration is required to enable comments.</p>
-                        <p className="text-xs text-yellow-600 mt-2">Contact the administrator to set up Firebase.</p>
-                    </div>
-                ) : comments.length === 0 && isAuthReady ? (
+                {comments.length === 0 && isAuthReady ? (
                     <p className="text-gray-500 text-center py-4 border-dashed border-2 border-gray-300 rounded-lg">
                         No comments yet. Be the first!
                     </p>
